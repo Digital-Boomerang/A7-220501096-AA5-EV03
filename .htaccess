@@ -1,10 +1,16 @@
 <IfModule mod_rewrite.c>
+    # Habilita el módulo de reescritura de URLs
     RewriteEngine On
 
-    # Redirigir todo a public/
+    # Redirige la raíz del proyecto hacia la carpeta "public/"
+    # Ej: http://midominio.com/ → http://midominio.com/public/
     RewriteRule ^$ public/ [L]
 
+    # Si el archivo o directorio existe, no hacer reescritura
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Redirige todas las demás solicitudes a public/index.php
+    # Esto permite que el router de PHP maneje todas las rutas "amigables"
     RewriteRule ^(.*)$ public/index.php [L]
 </IfModule>

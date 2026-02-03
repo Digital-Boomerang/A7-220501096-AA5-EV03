@@ -1,40 +1,61 @@
 <?php
 
-class AuthController {
+require_once __DIR__ . '/../services/AuthService.php';
 
-    public function login() {
+/**
+ * Controlador de Autenticación
+ * --------------------------------------------------
+ * Maneja las solicitudes relacionadas con el inicio
+ * de sesión de usuarios.
+ *
+ * Responsabilidades:
+ * - Recibir credenciales desde el cliente
+ * - Validar datos mínimos de entrada
+ * - Delegar la autenticación al servicio correspondiente
+ */
+class AuthController
+{
+    /**
+     * Iniciar sesión
+     *
+     * Endpoint encargado de autenticar un usuario
+     * usando correo y contraseña.
+     *
+     * Método:
+     * - POST
+     *
+     * Entrada esperada (JSON):
+     * {
+     *   "correo": "usuario@email.com",
+     *   "contrasena": "password"
+     * }
+     */
+    public static function login(): void
+    {
+        // Leer el cuerpo de la petición (JSON)
+        $data = json_decode(
+            file_get_contents("php://input"),
+            true
+        );
 
-        $data = json_decode(file_get_contents("php://input"), true);
+        // Aceptar "contrasena" o "password" para compatibilidad
+        $password = $data['contrasena'] ?? $data['password'] ?? null;
 
-        if (!isset($data["correo"], $data["contrasena"])) {
-            Response::json(["error" => "Datos incompletos"], 400);
-            return;
+        // Validar campos obligatorios
+        if (
+            empty($data['correo']) ||
+            empty($password)
+        ) {
+            Response::error(
+                "Correo y contraseña son obligatorios",
+                400
+            );
         }
 
-        $usuario = Usuario::findByCorreo($data["correo"]);
-
-        if (!$usuario) {
-            Response::json(["error" => "Usuario no encontrado"], 401);
-            return;
-        }
-
-        $hash = Credencial::getPassword($usuario["id_usuario"]);
-
-        if (!$hash) {
-            Response::json(["error" => "Credenciales inválidas"], 401);
-            return;
-        }
-
-        if (!password_verify($data["contrasena"], $hash)) {
-            Response::json(["error" => "Credenciales inválidas"], 401);
-            return;
-        }
-
-        Response::json([
-            "id"     => $usuario["id_usuario"],
-            "nombre" => $usuario["nombre"],
-            "correo" => $usuario["correo"],
-            "rol"    => $usuario["nombre_rol"]
-        ]);
+        // Delegar la lógica de autenticación al servicio
+        AuthService::login(
+            $data['correo'],
+            $password
+        );
     }
 }

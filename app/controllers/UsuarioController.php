@@ -1,36 +1,57 @@
 <?php
 
-class UsuarioController {
+require_once __DIR__ . '/../services/UsuarioService.php';
 
-    public function listar() {
-        $usuarios = Usuario::listar();
-        Response::json($usuarios);
+/**
+ * Controlador de Usuarios
+ *
+ * Gestiona las solicitudes HTTP relacionadas con los usuarios,
+ * delegando la lógica de negocio al servicio correspondiente.
+ */
+class UsuarioController
+{
+    /**
+     * Listar todos los usuarios
+     *
+     * Llama al servicio para obtener la lista completa de usuarios
+     * y envía la respuesta al cliente.
+     */
+    public function listar(): void
+    {
+        UsuarioService::listar();
     }
 
-    public function obtener() {
-        $id = $_GET["id"] ?? null;
-
-        if (!$id) {
-            Response::json(["error" => "ID requerido"], 400);
-        }
-
-        $usuario = Usuario::buscar($id);
-
-        if (!$usuario) {
-            Response::json(["error" => "Usuario no encontrado"], 404);
-        }
-
-        Response::json($usuario);
+    /**
+     * Obtener un usuario por ID
+     *
+     * @param int $id ID del usuario a consultar
+     * Llama al servicio para buscar el usuario y envía la respuesta.
+     */
+    public function obtener(int $id): void
+    {
+        UsuarioService::obtener($id);
     }
 
-    public function crear() {
+    /**
+     * Crear un nuevo usuario
+     *
+     * Lee los datos desde el cuerpo JSON de la solicitud y
+     * delega la creación al servicio correspondiente.
+     */
+    public function crear(): void
+    {
         $data = json_decode(file_get_contents("php://input"), true);
+        UsuarioService::crearUsuario($data);
+    }
 
-        $id = Usuario::crear($data);
-
-        Response::json([
-            "mensaje" => "Usuario creado",
-            "id" => $id
-        ], 201);
+    /**
+     * Eliminar un usuario por ID
+     *
+     * @param int $id ID del usuario a eliminar
+     * Llama al servicio para eliminar el usuario y envía la respuesta.
+     */
+    public function eliminar(int $id): void
+    {
+        UsuarioService::eliminar($id);
     }
 }

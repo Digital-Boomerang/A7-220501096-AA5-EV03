@@ -1,35 +1,88 @@
 <?php
 
-class CitaController {
+require_once __DIR__ . '/../services/CitaService.php';
 
-    public function listar() {
-        Response::json(Cita::listar());
+/**
+ * Controlador de Citas
+ * --------------------------------------------------
+ * Gestiona las solicitudes HTTP relacionadas con
+ * la entidad Cita.
+ *
+ * Responsabilidades:
+ * - Recibir y validar parámetros de entrada
+ * - Delegar la lógica de negocio al servicio
+ * - Retornar respuestas estructuradas al cliente
+ */
+class CitaController
+{
+    /**
+     * Listar todas las citas
+     *
+     * Endpoint:
+     * - GET /api/citas
+     *
+     * Retorna el listado completo de citas registradas.
+     */
+    public static function listar(): void
+    {
+        CitaService::listar();
     }
 
-    public function obtener() {
-        $id = $_GET["id"] ?? null;
-
-        if (!$id) {
-            Response::json(["error" => "ID requerido"], 400);
-        }
-
-        $cita = Cita::buscar($id);
-
-        if (!$cita) {
-            Response::json(["error" => "Cita no encontrada"], 404);
-        }
-
-        Response::json($cita);
+    /**
+     * Obtener una cita por ID
+     *
+     * Endpoint:
+     * - GET /api/citas/{id}
+     *
+     * Parámetros:
+     * - id (int): identificador de la cita
+     */
+    public static function obtener(int $id): void
+    {
+        // Delegar la búsqueda al servicio
+        CitaService::buscarPorId($id);
     }
 
-    public function crear() {
-        $data = json_decode(file_get_contents("php://input"), true);
+    /**
+     * Crear una nueva cita
+     *
+     * Endpoint:
+     * - POST /api/citas
+     *
+     * Entrada esperada (JSON):
+     * {
+     *   "fecha": "YYYY-MM-DD",
+     *   "estado": "pendiente",
+     *   "id_usuario": 1,
+     *   "id_vehiculo": 2,
+     *   "id_horario": 5
+     * }
+     */
+    public static function crear(): void
+    {
+        // Leer el cuerpo de la petición (JSON)
+        $data = json_decode(
+            file_get_contents("php://input"),
+            true
+        );
 
-        $id = Cita::crear($data);
+        // Delegar la creación al servicio
+        CitaService::crear($data);
+    }
 
-        Response::json([
-            "mensaje" => "Cita creada",
-            "id" => $id
-        ], 201);
+    /**
+     * Obtener horas ocupadas para una fecha
+     *
+     * Endpoint:
+     * - GET /api/citas/horas-ocupadas?fecha=YYYY-MM-DD
+     */
+    public static function horasOcupadas(): void
+    {
+        $fecha = $_GET['fecha'] ?? null;
+        if (!$fecha) {
+            Response::error("Fecha requerida", 400);
+        }
+
+        CitaService::horasOcupadas($fecha);
     }
 }
