@@ -71,6 +71,42 @@ class CitaController
     }
 
     /**
+     * Actualizar una cita por ID
+     *
+     * Endpoint:
+     * - PUT /api/citas/{id}
+     *
+     * Entrada esperada (JSON):
+     * {
+     *   "fecha": "YYYY-MM-DD",
+     *   "estado": "pendiente",
+     *   "id_usuario": 1,
+     *   "id_vehiculo": 2,
+     *   "id_horario": 5
+     * }
+     */
+    public static function actualizar(int $id): void
+    {
+        $data = json_decode(
+            file_get_contents("php://input"),
+            true
+        );
+
+        CitaService::actualizar($id, $data);
+    }
+
+    /**
+     * Eliminar una cita por ID
+     *
+     * Endpoint:
+     * - DELETE /api/citas/{id}
+     */
+    public static function eliminar(int $id): void
+    {
+        CitaService::eliminar($id);
+    }
+
+    /**
      * Obtener horas ocupadas para una fecha
      *
      * Endpoint:

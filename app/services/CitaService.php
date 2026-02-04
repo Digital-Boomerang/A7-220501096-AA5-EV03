@@ -45,6 +45,38 @@ class CitaService
     }
 
     /**
+     * Actualizar una cita por ID
+     *
+     * @param int $id ID de la cita
+     * @param array $data Datos de la cita: fecha, estado, id_usuario, id_vehiculo, id_horario
+     */
+    public static function actualizar(int $id, array $data): void
+    {
+        $cita = Cita::buscarPorId($id);
+        if (!$cita) {
+            Response::error("Cita no encontrada", 404);
+        }
+
+        if (
+            empty($data['fecha']) ||
+            empty($data['estado']) ||
+            empty($data['id_usuario']) ||
+            empty($data['id_vehiculo']) ||
+            empty($data['id_horario'])
+        ) {
+            Response::error("Debe indicar fecha, estado, usuario, vehiculo y horario", 400);
+        }
+
+        try {
+            Cita::actualizar($id, $data);
+            $actualizada = Cita::buscarPorId($id);
+            Response::success("Cita actualizada", $actualizada);
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+    /**
      * Listar todas las citas
      */
     public static function listar(): void
@@ -82,7 +114,7 @@ class CitaService
             );
         }
 
-        Response::json(["mensaje" => "Cita eliminada"]);
+        Response::success("Cita eliminada");
     }
 
     /**

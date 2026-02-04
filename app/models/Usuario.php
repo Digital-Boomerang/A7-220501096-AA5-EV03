@@ -108,6 +108,38 @@ class Usuario
     }
 
     /**
+     * Actualizar un usuario por su ID
+     *
+     * @param int $id ID del usuario
+     * @param array $data Datos del usuario:
+     *   - nombre
+     *   - correo
+     *   - telefono
+     *   - id_rol
+     * @return bool true si se actualizó correctamente
+     */
+    public static function actualizar(int $id, array $data): bool
+    {
+        $db = Database::connect();
+
+        $stmt = $db->prepare("
+            UPDATE usuario
+            SET nombre = ?, correo = ?, telefono = ?, id_rol = ?
+            WHERE id_usuario = ?
+        ");
+
+        $stmt->execute([
+            $data['nombre'],
+            $data['correo'],
+            $data['telefono'],
+            $data['id_rol'],
+            $id
+        ]);
+
+        return true;
+    }
+
+    /**
      * Verificar si un usuario existe por correo
      *
      * @param string $correo Correo electrónico a verificar
@@ -119,6 +151,26 @@ class Usuario
 
         $stmt = $db->prepare("SELECT 1 FROM usuario WHERE correo = ?");
         $stmt->execute([$correo]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * Verificar si un correo existe en otro usuario
+     *
+     * @param string $correo Correo electrónico a verificar
+     * @param int $id ID del usuario actual
+     * @return bool true si existe en otro usuario, false si no
+     */
+    public static function existsByCorreoExceptId(string $correo, int $id): bool
+    {
+        $db = Database::connect();
+
+        $stmt = $db->prepare("
+            SELECT 1 FROM usuario
+            WHERE correo = ? AND id_usuario <> ?
+        ");
+        $stmt->execute([$correo, $id]);
 
         return (bool) $stmt->fetchColumn();
     }

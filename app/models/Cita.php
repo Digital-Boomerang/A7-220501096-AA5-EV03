@@ -147,6 +147,86 @@ class Cita
     }
 
     /**
+     * Actualizar una cita
+     *
+     * @param int $id ID de la cita
+     * @param array $data Datos de la cita:
+     *  - fecha, estado, id_usuario, id_vehiculo, id_horario
+     * @return bool True si se actualizó
+     * @throws Exception Si ocurre un error en la transacción
+     */
+    public static function actualizar(int $id, array $data): bool
+    {
+        $db = Database::connect();
+
+        try {
+            $db->beginTransaction();
+
+            $current = self::buscarPorId($id);
+            if (!$current) {
+                throw new Exception("Cita no encontrada");
+            }
+
+            $currentHorario = (int) $current['id_horario'];
+            $nuevoHorario = (int) $data['id_horario'];
+
+            if ($currentHorario !== $nuevoHorario) {
+                // Ocupar nuevo horario si está libre
+                $updateHorario = $db->prepare("
+                    UPDATE horario
+                    SET estado = 1
+                    WHERE id_horario = ?
+                      AND (estado IS NULL OR estado = 0)
+                ");
+                $updateHorario->execute([$nuevoHorario]);
+
+                if ($updateHorario->rowCount() === 0) {
+                    $check = $db->prepare("
+                        SELECT 1
+                        FROM horario
+                        WHERE id_horario = ?
+                        LIMIT 1
+                    ");
+                    $check->execute([$nuevoHorario]);
+                    if ($check->fetchColumn()) {
+                        throw new Exception("Horario ocupado");
+                    }
+
+                    throw new Exception("Horario no encontrado");
+                }
+
+                // Liberar horario anterior
+                $liberar = $db->prepare("
+                    UPDATE horario
+                    SET estado = 0
+                    WHERE id_horario = ?
+                ");
+                $liberar->execute([$currentHorario]);
+            }
+
+            $stmt = $db->prepare("
+                UPDATE cita
+                SET fecha = ?, estado = ?, id_usuario = ?, id_vehiculo = ?, id_horario = ?
+                WHERE id_cita = ?
+            ");
+            $stmt->execute([
+                $data["fecha"],
+                $data["estado"],
+                $data["id_usuario"],
+                $data["id_vehiculo"],
+                $data["id_horario"],
+                $id
+            ]);
+
+            $db->commit();
+            return true;
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Eliminar una cita
      *
      * @param int $id ID de la cita
@@ -156,10 +236,32 @@ class Cita
     {
         $db = Database::connect();
 
-        $stmt = $db->prepare("DELETE FROM cita WHERE id_cita = ?");
-        $stmt->execute([$id]);
+        try {
+            $db->beginTransaction();
 
-        return $stmt->rowCount() > 0;
+            $cita = self::buscarPorId($id);
+            if (!$cita) {
+                $db->rollBack();
+                return false;
+            }
+
+            $stmt = $db->prepare("DELETE FROM cita WHERE id_cita = ?");
+            $stmt->execute([$id]);
+
+            // Liberar horario asociado
+            $liberar = $db->prepare("
+                UPDATE horario
+                SET estado = 0
+                WHERE id_horario = ?
+            ");
+            $liberar->execute([(int) $cita['id_horario']]);
+
+            $db->commit();
+            return true;
+        } catch (Exception $e) {
+            $db->rollBack();
+            throw $e;
+        }
     }
 
     /**

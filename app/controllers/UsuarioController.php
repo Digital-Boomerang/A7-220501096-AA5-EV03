@@ -45,6 +45,19 @@ class UsuarioController
     }
 
     /**
+     * Actualizar un usuario por ID
+     *
+     * @param int $id ID del usuario a actualizar
+     * Lee los datos desde el cuerpo JSON de la solicitud y
+     * delega la actualización al servicio correspondiente.
+     */
+    public function actualizar(int $id): void
+    {
+        $data = json_decode(file_get_contents("php://input"), true);
+        UsuarioService::actualizar($id, $data);
+    }
+
+    /**
      * Eliminar un usuario por ID
      *
      * @param int $id ID del usuario a eliminar

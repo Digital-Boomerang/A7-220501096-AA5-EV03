@@ -71,6 +71,43 @@ class UsuarioService
     }
 
     /**
+     * Actualizar un usuario por ID
+     *
+     * Valida existencia del usuario, rol y duplicados de correo.
+     */
+    public static function actualizar(int $id, array $data): void
+    {
+        $usuario = Usuario::buscar($id);
+        if (!$usuario) {
+            Response::error("Usuario no encontrado", 404);
+        }
+
+        // Validar campos mínimos
+        if (empty($data['nombre']) || empty($data['correo']) || empty($data['telefono'])) {
+            Response::error("Debe indicar nombre, correo y teléfono", 400);
+        }
+
+        if (empty($data['id_rol'])) {
+            Response::error("Debe indicar un rol válido", 400);
+        }
+
+        // Validar duplicados (correo) excluyendo el usuario actual
+        if (Usuario::existsByCorreoExceptId($data['correo'], $id)) {
+            Response::error("El correo ya está registrado", 400);
+        }
+
+        // Validar existencia del rol
+        if (!Rol::findById($data['id_rol'])) {
+            Response::error("Rol no válido", 400);
+        }
+
+        Usuario::actualizar($id, $data);
+
+        $actualizado = Usuario::buscar($id);
+        Response::success("Usuario actualizado correctamente", $actualizado);
+    }
+
+    /**
      * Eliminar un usuario por ID
      *
      * Valida que el usuario exista antes de eliminarlo.
